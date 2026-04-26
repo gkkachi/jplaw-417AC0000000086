@@ -1,0 +1,47 @@
+(
+  $process := function($n) {
+    $type($n) = 'string' ? $n :
+    $type($n) = 'array' ? $join($map($n, $process), '') :
+    $type($n) = 'object' ? (
+      $tag := $n.tag;
+      $tag = 'TOC' ? '' :
+      $tag = 'SupplProvision' ? '' :
+      
+      $tag = 'Table' ? (
+         $rows := $n.children[tag='TableRow'];
+         $maxCols := $count($rows[0].children[tag='TableColumn']);
+         $processedRows := $map($rows, function($row, $index) {(
+            $cols := $row.children[tag='TableColumn'];
+            $colTexts := $map($cols, function($col) {
+               $replace($process($col.children), /\n/, '')
+            });
+            $missingCols := $maxCols - $count($cols);
+            $padding := $missingCols = 1 ? [' '] : $missingCols = 2 ? [' ', ' '] : $missingCols = 3 ? [' ', ' ', ' '] : [];
+            $colTexts := $append($padding, $colTexts);
+            $rowText := '|' & $join($colTexts, '|') & '|';
+            $index = 0 ? $rowText & '\n|' & $join($map($colTexts, function($col) { '---' }), '|') & '|' : $rowText
+         )});
+         '\n' & $join($processedRows, '\n') & '\n\n'
+      ) :
+      (
+        $childText := $n.children ? $process($n.children) : '';
+        $tag = 'RelatedArticleNum' ? $childText & '\n\n' :
+        $tag = 'LawNum' ? $childText & '\n\n' :
+        $tag = 'LawTitle' ? '# ' & $childText & '\n\n' :
+        $tag = 'TOCLabel' ? $childText & '\n\n' :
+        $tag = 'ChapterTitle' ? '## ' & $childText & '\n\n' :
+        $tag = 'SectionTitle' ? '### ' & $childText & '\n\n' :
+        $tag = 'ArticleTitle' ? '#### ' & $childText & '\n' :
+        $tag = 'ArticleCaption' ? '*' & $childText & '*\n' :
+        $tag = 'ParagraphNum' ? $childText & ' ' :
+        $tag = 'ParagraphSentence' ? $childText & '\n\n' :
+        $tag = 'ItemTitle' ? $childText & ' ' :
+        $tag = 'ItemSentence' ? $childText & '\n\n' :
+        $tag = 'SupplProvisionLabel' ? '## ' & $childText & '\n\n' :
+        $tag = 'AppdxTableTitle' ? '## ' & $childText & '\n\n' :
+        $childText
+      )
+    ) : ''
+  };
+  $process(law_full_text)
+)

@@ -1,0 +1,38 @@
+name: Sync Law Revisions
+
+on:
+  schedule:
+    - cron: '0 15 * * *' # Run daily at midnight Japan
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history and tags
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run sync script
+        id: sync
+        run: npx zx sync.mjs
+
+      - name: Push changes
+        if: steps.sync.outputs.updated == 'true'
+        run: |
+          git push origin main
+          git push --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
