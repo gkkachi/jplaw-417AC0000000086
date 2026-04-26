@@ -32,7 +32,7 @@ jobs:
       - name: Push changes
         if: steps.sync.outputs.updated == 'true'
         run: |
-          git push origin main
+          git push origin master
           git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
